@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARECA TECH LTD.</title>
+  <style>
+    /* Rosé Pine Moon palette */
+    :root {
+      --base: #232136;
+      --surface: #2a273f;
+      --overlay: #393552;
+      --muted: #6e6a86;
+      --subtle: #908caa;
+      --text: #e0def4;
+      --love: #eb6f92;
+      --gold: #f6c177;
+      --rose: #ea9a97;
+      --pine: #3e8fb0;
+      --foam: #9ccfd8;
+      --iris: #c4a7e7;
+      --highlight-low: #2a283e;
+      --highlight-med: #44415a;
+      --highlight-high: #56526e;
+    }
+
+    @font-face {
+      font-family: 'BerkeleyMono';
+      src: url('fonts/BerkeleyMonoNerdFont-Regular.otf') format('opentype');
+      font-weight: 400;
+      font-style: normal;
+    }
+
+    @font-face {
+      font-family: 'BerkeleyMono';
+      src: url('fonts/BerkeleyMonoNerdFont-Bold.otf') format('opentype');
+      font-weight: 700;
+      font-style: normal;
+    }
+
+    @font-face {
+      font-family: 'BerkeleyMono';
+      src: url('fonts/BerkeleyMonoNerdFont-BoldItalic.otf') format('opentype');
+      font-weight: 700;
+      font-style: italic;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--base);
+      color: var(--text);
+      font-family: 'BerkeleyMono', 'Berkeley Mono', monospace;
+      overflow: hidden;
+    }
+
+    #scene {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    #horse {
+      white-space: pre;
+      font-size: clamp(6px, 1.1vw, 14px);
+      line-height: 1.15;
+      letter-spacing: 0.02em;
+      color: var(--rose);
+      transition: none;
+      text-align: left;
+      margin: 0 auto;
+    }
+
+    #brand {
+      margin-top: 0.8em;
+      font-size: clamp(6px, 1.1vw, 14px);
+      font-weight: 700;
+      font-style: italic;
+      color: var(--love);
+      letter-spacing: 0.35em;
+      text-align: right;
+      width: 110ch;
+      user-select: none;
+    }
+
+    /* Controls — thin bottom bar */
+    #controls {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--overlay);
+      padding: 8px 20px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      overflow-x: auto;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .slider-name {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      width: 42px;
+      text-align: right;
+    }
+
+    .slider-desc { display: none; }
+    .slider-value { display: none; }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 60px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--overlay);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .slider-rate .slider-name { color: var(--love); }
+    .slider-split .slider-name { color: var(--pine); }
+    .slider-noise .slider-name { color: var(--gold); }
+    .slider-jitter .slider-name { color: var(--iris); }
+    .slider-fuzz .slider-name { color: var(--rose); }
+    .slider-decay .slider-name { color: var(--foam); }
+    .slider-chain .slider-name { color: #ebbcba; }
+    .slider-speed .slider-name { color: var(--rose); }
+
+    .slider-rate input::-webkit-slider-thumb { background: var(--love); }
+    .slider-split input::-webkit-slider-thumb { background: var(--pine); }
+    .slider-noise input::-webkit-slider-thumb { background: var(--gold); }
+    .slider-jitter input::-webkit-slider-thumb { background: var(--iris); }
+    .slider-fuzz input::-webkit-slider-thumb { background: var(--rose); }
+    .slider-decay input::-webkit-slider-thumb { background: var(--foam); }
+    .slider-chain input::-webkit-slider-thumb { background: #ebbcba; }
+    .slider-speed input::-webkit-slider-thumb { background: var(--rose); }
+
+    /* Scanline overlay */
+    #scene::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.03) 2px,
+        rgba(0, 0, 0, 0.03) 4px
+      );
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Vignette */
+    #vignette {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at center, transparent 60%, rgba(35, 33, 54, 0.8) 100%);
+      pointer-events: none;
+      z-index: 9;
+    }
+  </style>
+</head>
+<body>
+  <div id="vignette"></div>
+  <div id="scene">
+    <div id="horse"></div>
+    <div id="brand">A R E C A &nbsp; T E C H &nbsp; L T D .</div>
+  </div>
+
+  <div id="controls">
+    <div class="slider-row slider-rate"><span class="slider-name">RATE</span><input type="range" min="0" max="100" value="50" id="sl-rate"></div>
+    <div class="slider-row slider-split"><span class="slider-name">SPLIT</span><input type="range" min="0" max="100" value="50" id="sl-split"></div>
+    <div class="slider-row slider-noise"><span class="slider-name">NOISE</span><input type="range" min="0" max="100" value="30" id="sl-noise"></div>
+    <div class="slider-row slider-jitter"><span class="slider-name">JITTER</span><input type="range" min="0" max="100" value="40" id="sl-jitter"></div>
+    <div class="slider-row slider-fuzz"><span class="slider-name">FUZZ</span><input type="range" min="0" max="100" value="12" id="sl-fuzz"></div>
+    <div class="slider-row slider-decay"><span class="slider-name">DECAY</span><input type="range" min="0" max="100" value="50" id="sl-decay"></div>
+    <div class="slider-row slider-chain"><span class="slider-name">CHAIN</span><input type="range" min="0" max="100" value="30" id="sl-chain"></div>
+    <div class="slider-row slider-speed"><span class="slider-name">SPEED</span><input type="range" min="0" max="100" value="50" id="sl-speed"></div>
+  </div>
+
+  <script>
+    let frames = [];
+    let similar = {};
+    let frameIndex = 0;
+    let tick = 0;
+
+    // Glitch state machine
+    let state = 'calm';
+    let stateTTL = 20;
+    let aberration = 0;
+    let intensity = 0;
+    let corruptProb = 0;
+
+    // Params
+    const params = {
+      rate: 0.5,
+      split: 0.5,
+      noise: 0.3,
+      jitter: 0.4,
+      fuzz: 0.12,
+      decay: 0.5,
+      chain: 0.3,
+      speed: 0.5
+    };
+
+    const noiseChars = '!@#$%^&*(){}[]|/<>~`01░▒▓█▀▄═╬╫╪┼┤├';
+
+    function rand(n) { return Math.floor(Math.random() * n); }
+
+    function transition() {
+      stateTTL--;
+      if (stateTTL <= 0) {
+        const r = rand(100);
+        switch (state) {
+          case 'calm':
+            if (r < params.rate * 40) {
+              state = 'burst';
+              stateTTL = 3 + rand(10);
+              aberration = 1 + Math.round(params.split * 5);
+              intensity = Math.max(params.noise, params.jitter);
+              corruptProb = Math.round(params.noise * 55);
+            } else if (r < params.rate * 75) {
+              state = 'micro';
+              stateTTL = 2 + rand(6);
+              aberration = 1 + Math.round(params.split * 1.5);
+              intensity = Math.max(params.noise, params.jitter) * 0.4;
+              corruptProb = Math.round(params.noise * 10);
+            } else {
+              state = 'calm';
+              stateTTL = 3 + rand(Math.max(1, Math.round((1 - params.rate) * 25)));
+              aberration = 0; intensity = 0; corruptProb = 0;
+            }
+            break;
+          case 'micro':
+            if (r < params.chain * 45) {
+              state = 'burst';
+              stateTTL = 3 + Math.round(params.decay * 8);
+              aberration = 2 + Math.round(params.split * 4);
+              intensity = Math.max(params.noise, params.jitter);
+              corruptProb = Math.round(params.noise * 50);
+            } else if (r < params.chain * 60 + 30) {
+              state = 'micro';
+              stateTTL = 1 + rand(4);
+              aberration = 1 + rand(Math.max(1, Math.round(params.split * 3)));
+            } else {
+              state = 'calm';
+              stateTTL = 3 + rand(Math.max(1, Math.round((1 - params.rate) * 20)));
+              aberration = 0; intensity = 0; corruptProb = 0;
+            }
+            break;
+          case 'burst':
+            state = 'decay';
+            stateTTL = 2 + Math.round(params.decay * 10);
+            break;
+          case 'decay':
+            if (r < params.chain * 35) {
+              state = 'burst';
+              stateTTL = 2 + Math.round(params.decay * 6);
+              aberration = 1 + Math.round(params.split * 4);
+              intensity = Math.max(params.noise, params.jitter);
+              corruptProb = Math.round(params.noise * 45);
+            } else {
+              state = 'calm';
+              stateTTL = 3 + rand(Math.max(1, Math.round((1 - params.rate) * 15)));
+              aberration = 0; intensity = 0; corruptProb = 0;
+            }
+            break;
+        }
+      }
+      if (state === 'decay') {
+        const fade = 1 - params.decay * 0.4;
+        if (Math.random() < (1 - params.decay) * 0.6) aberration = Math.max(0, aberration - 1);
+        intensity *= fade;
+        corruptProb = Math.max(0, corruptProb - Math.round((1 - params.decay) * 12));
+      }
+      if (state === 'micro') {
+        aberration = Math.random() < 0.6 ? 1 + rand(Math.max(1, Math.round(params.split * 2.5))) : 0;
+      }
+    }
+
+    function contentBounds(line) {
+      let start = -1, end = 0;
+      for (let i = 0; i < line.length; i++) {
+        if (line[i] !== ' ') {
+          if (start < 0) start = i;
+          end = i + 1;
+        }
+      }
+      return start >= 0 ? [start, end] : null;
+    }
+
+    function fuzzChar(c) {
+      if (c === ' ' || Math.random() > params.fuzz) return c;
+      const alts = similar[c];
+      if (alts && alts.length) return alts[rand(alts.length)];
+      return c;
+    }
+
+    function escapeHtml(c) {
+      if (c === '<') return '&lt;';
+      if (c === '>') return '&gt;';
+      if (c === '&') return '&amp;';
+      if (c === '"') return '&quot;';
+      return c;
+    }
+
+    const colors = {
+      main:    'var(--rose)',
+      white:   'var(--text)',
+      red:     'var(--love)',
+      blue:    'var(--pine)',
+      cyan:    'var(--foam)',
+      purple:  'var(--iris)',
+      noise:   'var(--gold)',
+    };
+
+    function renderFrame() {
+      transition();
+
+      const frame = frames[frameIndex];
+      const lines = frame.split('\n');
+      const ab = Math.round(aberration * params.split);
+      const noise = params.noise;
+      const jitter = params.jitter;
+      const effIntense = intensity * Math.max(noise, jitter);
+      const effCorrupt = Math.round(corruptProb * noise);
+      const doFuzz = params.fuzz > 0;
+
+      // Pick corrupt lines
+      const corruptLines = new Set();
+      if (noise > 0) {
+        for (let i = 0; i < Math.round(effIntense * 4); i++) {
+          corruptLines.add(rand(lines.length));
+        }
+      }
+
+      let html = '';
+      for (let ln = 0; ln < lines.length; ln++) {
+        let line = lines[ln];
+        const len = line.length;
+        const bounds = contentBounds(line);
+        const hasContent = bounds !== null;
+        let cstart = bounds ? bounds[0] : 0;
+        let cend = bounds ? bounds[1] : 0;
+
+        // Jitter
+        if (hasContent && jitter > 0 && effIntense > 0.1 && Math.random() < jitter * effIntense * 0.4) {
+          const content = line.substring(cstart, cend);
+          const disp = rand(Math.max(1, Math.round(jitter * 8) + 1)) - Math.round(jitter * 4);
+          if (disp !== 0) {
+            const newStart = Math.max(0, Math.min(len - content.length, cstart + disp));
+            line = ' '.repeat(newStart) + content + ' '.repeat(Math.max(0, len - newStart - content.length));
+            const b2 = contentBounds(line);
+            if (b2) { cstart = b2[0]; cend = b2[1]; }
+          }
+        }
+
+        const gstart = Math.max(0, cstart - ab - 2);
+        const gend = Math.min(len, cend + ab + 2);
+        const corrupted = corruptLines.has(ln);
+
+        if (ab === 0 || !hasContent) {
+          // No aberration
+          for (let x = 0; x < len; x++) {
+            const c = doFuzz && hasContent ? fuzzChar(line[x]) : line[x];
+            if (c !== ' ') {
+              html += `<span style="color:${colors.main}">${escapeHtml(c)}</span>`;
+            } else {
+              html += ' ';
+            }
+          }
+        } else {
+          // Pre-zone
+          for (let x = 0; x < gstart; x++) {
+            const c = doFuzz ? fuzzChar(line[x]) : line[x];
+            html += c !== ' ' ? `<span style="color:${colors.main}">${escapeHtml(c)}</span>` : ' ';
+          }
+          // Aberration zone
+          for (let x = gstart; x < gend; x++) {
+            const rawCC = line[x] || ' ';
+            const cc = doFuzz ? fuzzChar(rawCC) : rawCC;
+            const lx = x - ab, rx = x + ab;
+            const rawLC = (lx >= 0 && lx < len) ? line[lx] : ' ';
+            const rawRC = (rx >= 0 && rx < len) ? line[rx] : ' ';
+            const lc = doFuzz ? fuzzChar(rawLC) : rawLC;
+            const rc = doFuzz ? fuzzChar(rawRC) : rawRC;
+            const cv = cc !== ' ', lv = lc !== ' ', rv = rc !== ' ';
+            const isNoisy = corrupted && noise > 0 && Math.random() * 100 < effCorrupt && x >= cstart && x < cend;
+
+            let displayChar, color;
+            if (isNoisy) {
+              displayChar = noiseChars[rand(noiseChars.length)];
+              color = colors.noise;
+            } else if (cv) {
+              displayChar = cc;
+              color = (cv && lv && rv) ? colors.white : (cv && lv) ? colors.main : (cv && rv) ? colors.cyan : colors.main;
+            } else if (lv) {
+              displayChar = lc;
+              color = rv ? colors.purple : colors.red;
+            } else if (rv) {
+              displayChar = rc;
+              color = colors.blue;
+            } else {
+              html += ' ';
+              continue;
+            }
+            html += `<span style="color:${color}">${escapeHtml(displayChar)}</span>`;
+          }
+          // Post-zone
+          for (let x = gend; x < len; x++) {
+            const c = doFuzz ? fuzzChar(line[x]) : line[x];
+            html += c !== ' ' ? `<span style="color:${colors.main}">${escapeHtml(c)}</span>` : ' ';
+          }
+        }
+        html += '\n';
+      }
+
+      document.getElementById('horse').innerHTML = html;
+      frameIndex = (frameIndex + 1) % frames.length;
+      tick++;
+    }
+
+    // Wire up sliders
+    let animInterval = null;
+    const paramKeys = ['rate','split','noise','jitter','fuzz','decay','chain','speed'];
+
+    paramKeys.forEach(key => {
+      const sl = document.getElementById('sl-' + key);
+      const val = document.getElementById('val-' + key);
+      sl.addEventListener('input', () => {
+        params[key] = sl.value / 100;
+        val.textContent = sl.value + '%';
+        if (key === 'speed') restartTimer();
+      });
+    });
+
+    function restartTimer() {
+      if (animInterval) clearInterval(animInterval);
+      const interval = Math.max(40, 200 - params.speed * 160);
+      animInterval = setInterval(renderFrame, interval);
+    }
+
+    // Esc to toggle controls bar
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        const c = document.getElementById('controls');
+        c.style.display = c.style.display === 'none' ? 'flex' : 'none';
+      }
+    });
+
+    // Load data and start
+    fetch('horse.json')
+      .then(r => r.json())
+      .then(data => {
+        frames = data.frames;
+        similar = data.similar;
+        restartTimer();
+      });
+  </script>
+</body>
+</html>
